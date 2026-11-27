@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Logging in to Impact Assessment without SSO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --page: #eef0f0;
+  --surface: #ffffff;
+  --ink: #1e2235;
+  --muted: #5a6470;
+  --line: #d5dadc;
+  --teal-deep: #00444f;
+  --teal: #0b4a55;
+  --aqua: #4db8bc;
+  --aqua-soft: #dff1f1;
+  --warn-soft: #fff4d6;
+  --warn-ink: #6b4e00;
+  --pin: #e0702b;
+  --font: "Lexend", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #111a1d;
+    --surface: #18252a;
+    --ink: #e8eef0;
+    --muted: #9fb0b6;
+    --line: #2b3c42;
+    --aqua-soft: #173b3e;
+    --warn-soft: #3a3012;
+    --warn-ink: #f3d68a;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #111a1d;
+  --surface: #18252a;
+  --ink: #e8eef0;
+  --muted: #9fb0b6;
+  --line: #2b3c42;
+  --aqua-soft: #173b3e;
+  --warn-soft: #3a3012;
+  --warn-ink: #f3d68a;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: inherit; }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font);
+  font-weight: 300;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+img, svg { max-width: 100%; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--aqua); outline-offset: 2px; }
+
+/* Top bar, echoing the IA app header */
+.topbar {
+  background: var(--teal-deep);
+  color: #fff;
+  padding: 1.1rem 1.5rem;
+}
+.topbar-inner {
+  max-width: 1040px; margin: 0 auto;
+  display: flex; align-items: center; gap: .8rem;
+}
+.mark { width: 30px; height: 30px; flex: none; }
+.topbar span { font-weight: 500; letter-spacing: .01em; }
+
+/* Hero */
+.hero {
+  background: var(--teal-deep);
+  color: #fff;
+  padding: 1.5rem 1.5rem 4.5rem;
+}
+.hero-inner { max-width: 1040px; margin: 0 auto; }
+.hero h1 {
+  font-weight: 500;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.1;
+  margin: .5rem 0 1rem;
+  max-width: 16ch;
+}
+.hero p { max-width: 58ch; margin: 0; color: #cfe6e8; font-size: 1.1rem; }
+
+.path {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .75rem;
+  margin-top: 2.25rem;
+  max-width: 860px;
+}
+.path div {
+  border-top: 3px solid var(--aqua);
+  padding-top: .75rem;
+}
+.path b { display: block; font-weight: 600; font-size: 1.6rem; color: var(--aqua); line-height: 1; }
+.path span { display: block; margin-top: .4rem; font-size: .95rem; color: #e6f3f3; }
+
+main {
+  max-width: 1040px;
+  margin: -2.5rem auto 0;
+  padding: 0 1.5rem 4rem;
+}
+
+.section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  margin-bottom: 1.5rem;
+}
+.section-head { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.25rem; }
+.num {
+  flex: none;
+  width: 2.4rem; height: 2.4rem;
+  border-radius: 50%;
+  background: var(--teal);
+  color: #fff;
+  display: grid; place-items: center;
+  font-weight: 600;
+}
+.section h2 { margin: 0; font-weight: 500; font-size: 1.45rem; line-height: 1.25; }
+.who { margin: .2rem 0 0; color: var(--muted); font-size: .95rem; }
+
+.two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 2rem;
+  align-items: start;
+}
+.steps { margin: 0; padding-left: 0; list-style: none; counter-reset: s; }
+.steps li {
+  counter-increment: s;
+  position: relative;
+  padding: 0 0 1rem 2.4rem;
+}
+.steps li::before {
+  content: counter(s);
+  position: absolute; left: 0; top: .05rem;
+  width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  background: var(--pin); color: #fff;
+  font-size: .85rem; font-weight: 600;
+  display: grid; place-items: center;
+}
+.steps strong { font-weight: 600; }
+
+.note {
+  background: var(--aqua-soft);
+  border-left: 4px solid var(--aqua);
+  padding: .85rem 1rem;
+  border-radius: 0 4px 4px 0;
+  margin-top: .5rem;
+  font-size: .95rem;
+}
+.warn {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+  border-left: 4px solid #e0a800;
+  padding: .85rem 1rem;
+  border-radius: 0 4px 4px 0;
+  font-size: .95rem;
+  margin-top: .5rem;
+}
+
+/* ---------- Mock screens (always light, like the real app) ---------- */
+.screen {
+  background: #e8e8e8;
+  border-radius: 8px;
+  border: 1px solid #c9cfd1;
+  overflow: hidden;
+  color: #1e2235;
+  font-size: .82rem;
+}
+.chrome {
+  background: #2b2f33;
+  padding: .45rem .7rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.chrome i { width: 9px; height: 9px; border-radius: 50%; background: #5d6368; display: block; }
+.url {
+  margin-left: .4rem;
+  background: #3d4247; color: #e5e7e9;
+  border-radius: 20px; padding: .15rem .8rem;
+  font-size: .75rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.login-body { padding: 1.25rem 1rem 1.5rem; }
+.brand { text-align: center; margin-bottom: 1rem; }
+.brand .word { font-weight: 500; font-size: 1.35rem; line-height: 1.05; color: #1e2235; }
+.brand small { display: block; color: #555; font-size: .7rem; margin-top: .3rem; }
+.card {
+  background: #fff;
+  padding: 1.1rem 1.25rem 1.25rem;
+  max-width: 420px;
+  margin: 0 auto;
+  position: relative;
+}
+.field { position: relative; margin-bottom: 1rem; }
+.field label { display: block; font-weight: 500; margin-bottom: .3rem; }
+.input {
+  border-bottom: 1.5px solid #1e2235;
+  padding: .4rem .3rem;
+  color: #888;
+}
+.input.filled { background: #ececec; color: #1e2235; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.check { display: flex; align-items: center; gap: .35rem; }
+.check i { width: 12px; height: 12px; border: 1px solid #888; display: block; }
+.forgot { color: #0b4a55; text-decoration: underline; position: relative; }
+.btn-main {
+  display: block; width: max-content;
+  margin: 1rem auto .9rem;
+  background: #0b4a55; color: #fff;
+  padding: .5rem 1.3rem; border-radius: 3px;
+  font-weight: 500; position: relative;
+}
+.sso-wrap { position: relative; }
+.sso {
+  border: 1px solid #555; text-align: center;
+  padding: .4rem; margin: .4rem auto 0; max-width: 220px;
+  color: #333;
+}
+.sso-wrap.dim .sso { opacity: .35; }
+.cross {
+  position: absolute; inset: -4px 18%;
+  border: 2px dashed #c0392b; border-radius: 4px;
+  pointer-events: none;
+}
+.cross span {
+  position: absolute; right: -6px; top: 50%;
+  transform: translate(100%, -50%);
+  background: #c0392b; color: #fff;
+  font-size: .7rem; padding: .1rem .45rem; border-radius: 3px;
+  white-space: nowrap;
+}
+.pin {
+  position: absolute;
+  width: 1.45rem; height: 1.45rem; border-radius: 50%;
+  background: var(--pin); color: #fff;
+  font-size: .75rem; font-weight: 600;
+  display: grid; place-items: center;
+  box-shadow: 0 0 0 3px rgba(224,112,43,.25);
+}
+.ring { box-shadow: 0 0 0 2px var(--pin); border-radius: 3px; }
+
+/* Screen switcher */
+.tabs { display: flex; gap: .5rem; margin-bottom: .75rem; flex-wrap: wrap; }
+.tab {
+  font: inherit; font-size: .9rem;
+  border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink);
+  padding: .45rem .9rem; border-radius: 20px; cursor: pointer;
+}
+.tab[aria-selected="true"] { background: var(--teal); color: #fff; border-color: var(--teal); }
+.panel[hidden] { display: none; }
+
+/* School users mock */
+.app-bar {
+  background: #00444f; color: #fff;
+  padding: .55rem .9rem;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: .72rem;
+}
+.crumbs { background: #fff; padding: .55rem .9rem; color: #444; border-bottom: 1px solid #e3e3e3; }
+.toolbar { display: flex; gap: .45rem; padding: .8rem .9rem .5rem; flex-wrap: wrap; align-items: center; }
+.ghost { border: 1px solid #0b4a55; color: #0b4a55; background: #f7fbfb; padding: .3rem .6rem; font-size: .72rem; position: relative; }
+.solid { background: #0b4a55; color: #fff; padding: .3rem .7rem; font-size: .72rem; margin-left: auto; }
+.table-scroll { overflow-x: auto; padding: 0 .9rem 1rem; }
+table { border-collapse: collapse; width: 100%; min-width: 520px; background: #f0f4f6; font-size: .74rem; }
+th { background: #00444f; color: #fff; text-align: left; font-weight: 500; padding: .45rem .5rem; }
+td { padding: .5rem; border-top: 1px solid #d3dbde; vertical-align: middle; }
+td small { display: block; font-size: .6rem; color: #666; }
+.dots { font-weight: 700; letter-spacing: 1px; position: relative; }
+.menu-cell { position: relative; }
+.menu {
+  position: absolute; right: .3rem; top: 2rem; z-index: 2;
+  background: #fff; border: 1px solid #ddd;
+  box-shadow: 0 4px 14px rgba(0,0,0,.12);
+  min-width: 128px; font-size: .74rem;
+}
+.menu div { padding: .45rem .7rem; border-bottom: 1px solid #eee; color: #0b4a55; }
+.menu .hl { background: #fff0e6; font-weight: 600; outline: 2px solid var(--pin); outline-offset: -2px; }
+
+/* Email illustration */
+.mail {
+  background: #fff; color: #1e2235;
+  border: 1px solid #c9cfd1; border-radius: 8px;
+  overflow: hidden; font-size: .85rem;
+}
+.mail-top { background: #f3f5f6; padding: .7rem 1rem; border-bottom: 1px solid #e1e5e7; }
+.mail-top div { color: #666; font-size: .75rem; }
+.mail-body { padding: 1.1rem 1rem 1.4rem; }
+.skel { height: .55rem; background: #e6e9eb; border-radius: 3px; margin: .45rem 0; }
+.mail-btn {
+  display: inline-block; margin-top: .8rem;
+  background: #0b4a55; color: #fff; padding: .45rem 1rem; border-radius: 3px;
+  font-weight: 500; position: relative;
+}
+
+/* Chooser */
+.chooser { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.choice {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1.1rem 1.2rem;
+}
+.choice h3 { margin: 0 0 .4rem; font-size: 1.05rem; font-weight: 500; }
+.choice p { margin: 0; color: var(--muted); font-size: .95rem; }
+.choice a { display: inline-block; margin-top: .6rem; font-weight: 500; color: var(--teal); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .choice a { color: var(--aqua); }
+}
+:root[data-theme="dark"] .choice a { color: var(--aqua); }
+
+/* Checklist */
+.checklist { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: .9rem 2rem; }
+.checklist li { padding-left: 1.9rem; position: relative; }
+.checklist li::before {
+  content: ""; position: absolute; left: 0; top: .2rem;
+  width: 1.1rem; height: 1.1rem; border: 2px solid var(--aqua); border-radius: 3px;
+}
+.checklist strong { font-weight: 600; display: block; }
+
+footer { text-align: center; color: var(--muted); font-size: .9rem; padding: 0 1.5rem 3rem; }
+
+@media (max-width: 760px) {
+  .two-col, .chooser, .checklist { grid-template-columns: 1fr; }
+  .path { grid-template-columns: 1fr; }
+  .cross span { position: static; transform: none; display: inline-block; margin-top: .3rem; }
+  .cross { inset: -4px 5%; }
+}
+@media print {
+  .hero, .topbar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .tabs { display: none; }
+  .panel[hidden] { display: block; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+      <polygon points="2,4 20,20 2,36" fill="#2a6b6b"/>
+      <polygon points="14,4 30,20 14,36 22,20" fill="#4db8bc"/>
+      <polygon points="26,4 38,20 26,36 31,20" fill="#ffffff"/>
+    </svg>
+    <span>Impact Assessment</span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <h1>Logging in without Microsoft or Google</h1>
+    <p>Your school uses an email and password to log in to Impact Assessment. Here’s how to get your password and sign in for the first time.</p>
+    <div class="path" aria-label="The three stages">
+      <div><b>1</b><span>Your school admin invites you</span></div>
+      <div><b>2</b><span>You set your own password</span></div>
+      <div><b>3</b><span>You log in with email and password</span></div>
+    </div>
+  </div>
+</section>
+
+<main>
+
+  <!-- Stage 1: admin -->
+  <section class="section" id="invite">
+    <div class="section-head">
+      <div class="num">1</div>
+      <div>
+        <h2>Your school admin sends you an invite</h2>
+        <p class="who">For your school’s Impact Assessment admin</p>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <ol class="steps">
+          <li>Go to <strong>Configuration › School users</strong>.</li>
+          <li>Find the teacher’s row and click the <strong>three dots</strong> under Actions.</li>
+          <li>Click <strong>Invite</strong>. The teacher gets an email to set their password.</li>
+        </ol>
+        <div class="note">The <strong>Invited</strong> column shows when each person was last sent an invite, so you can check who has been invited.</div>
+        <div class="note">To invite everyone in the list at once, use <strong>Invite all</strong> at the top of the page.</div>
+        <div class="warn">If a teacher isn’t in the list, they need to be in your school’s student information system with their school email. Teachers without classes can be added with <strong>Add user</strong>, then invited.</div>
+      </div>
+
+      <div class="screen" role="img" aria-label="School users page with the Actions menu open and Invite highlighted">
+        <div class="app-bar"><span>MARKBOOKS &nbsp; ASSESSMENT ANALYSIS</span><span>School Admin</span></div>
+        <div class="crumbs">Configuration › School users</div>
+        <div class="toolbar">
+          <span class="ghost">INVITE NEW</span>
+          <span class="ghost">INVITE ALL</span>
+          <span style="font-size:.72rem">Inactive</span>
+          <span class="solid">ADD USER</span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>First name</th><th>Email</th><th>Permissions</th><th>Invited</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr><td>Sam</td><td>sam.taylor…</td><td>User</td><td><small>Last invited:</small>2026/11/24</td><td class="dots">•••</td></tr>
+              <tr><td>Priya</td><td>priya.nair…</td><td>User</td><td><small>Last invited:</small>—</td>
+                <td class="menu-cell"><span class="dots ring" style="padding:0 .25rem">•••</span><span class="pin" style="left:-1.7rem;top:.35rem">2</span>
+                  <div class="menu">
+                    <div class="hl">✉ Invite<span class="pin" style="right:-.7rem;top:.25rem">3</span></div>
+                    <div>✎ Edit</div>
+                    <div>🔒 Deauthorise</div>
+                  </div>
+                </td></tr>
+              <tr><td>Tom</td><td>tom.walsh…</td><td>User</td><td><small>Last invited:</small>2026/11/24</td><td class="dots">•••</td></tr>
+              <tr><td>Grace</td><td>grace.lee…</td><td>Admin</td><td><small>Last invited:</small>2026/11/24</td><td class="dots">•••</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stage 2: set password -->
+  <section class="section" id="password">
+    <div class="section-head">
+      <div class="num">2</div>
+      <div>
+        <h2>Set your password from the email</h2>
+        <p class="who">For teachers</p>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <ol class="steps">
+          <li>Open the email from <strong>Impact Assessment</strong> in your school inbox. If it isn’t there, check your junk or spam folder.</li>
+          <li>Click the link in the email.</li>
+          <li>Choose your own password and save it.</li>
+        </ol>
+        <div class="note">No email? You can still set a password yourself. See <a href="#forgot">No invite, or forgot your password</a>.</div>
+      </div>
+      <div class="mail" role="img" aria-label="Illustration of the invite email with a link to set your password">
+        <div class="mail-top">
+          <strong>Impact Assessment</strong>
+          <div>To: firstname.lastname@education.vic.gov.au</div>
+        </div>
+        <div class="mail-body">
+          <div class="skel" style="width:70%"></div>
+          <div class="skel" style="width:92%"></div>
+          <div class="skel" style="width:55%"></div>
+          <span class="mail-btn">Link to set your password<span class="pin" style="right:-.75rem;top:-.7rem">2</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stage 3: log in -->
+  <section class="section" id="login">
+    <div class="section-head">
+      <div class="num">3</div>
+      <div>
+        <h2>Log in with your email and password</h2>
+        <p class="who">For teachers, every time you log in</p>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <ol class="steps">
+          <li>Go to <strong>app.impactassessment.org.au</strong>.</li>
+          <li>Type your <strong>school email address</strong> and click <strong>Next</strong>.</li>
+          <li>Type the <strong>password</strong> you set.</li>
+          <li>Click <strong>LOGIN</strong>.</li>
+        </ol>
+        <div class="warn"><strong>Don’t use “Sign in with Microsoft” or “Sign in with Google”.</strong> Your school logs in with email and password, so those buttons won’t work for you.</div>
+        <div class="note">Tick <strong>Remember me</strong> on your own device so you don’t have to type your email every time.</div>
+      </div>
+
+      <div>
+        <div class="tabs" role="tablist" aria-label="Login screens">
+          <button class="tab" role="tab" id="t-email" aria-selected="true" aria-controls="p-email">Enter email</button>
+          <button class="tab" role="tab" id="t-pass" aria-selected="false" aria-controls="p-pass">Enter password</button>
+        </div>
+
+        <div class="panel" id="p-email" role="tabpanel" aria-labelledby="t-email">
+          <div class="screen" role="img" aria-label="Login page: type your email and click Next">
+            <div class="chrome"><i></i><i></i><i></i><span class="url">app.impactassessment.org.au/login</span></div>
+            <div class="login-body">
+              <div class="brand"><div class="word">Impact<br>Assessment</div><small>Powered by SMART GRADE</small></div>
+              <div class="card">
+                <div class="field">
+                  <label>Email</label>
+                  <div class="input ring">firstname.lastname@education.vic.gov.au</div>
+                  <span class="pin" style="right:-.6rem;top:-.4rem">2</span>
+                </div>
+                <span class="btn-main">NEXT</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="p-pass" role="tabpanel" aria-labelledby="t-pass" hidden>
+          <div class="screen" role="img" aria-label="Password screen: type your password, click Login, and don't use the Microsoft or Google buttons">
+            <div class="chrome"><i></i><i></i><i></i><span class="url">app.impactassessment.org.au/login</span></div>
+            <div class="login-body">
+              <div class="brand"><div class="word">Impact<br>Assessment</div><small>Powered by SMART GRADE</small></div>
+              <div class="card">
+                <div class="field">
+                  <label>Email</label>
+                  <div class="input filled">firstname.lastname@education.vic.gov.au</div>
+                </div>
+                <div class="field">
+                  <label>Password</label>
+                  <div class="input ring">Enter your password</div>
+                  <span class="pin" style="right:-.6rem;top:-.4rem">3</span>
+                </div>
+                <div class="row">
+                  <span class="check"><i></i>Remember me</span>
+                  <span class="forgot">I have forgotten my credentials</span>
+                </div>
+                <span class="btn-main ring">LOGIN<span class="pin" style="right:-1.9rem;top:.25rem">4</span></span>
+                <div class="sso-wrap dim">
+                  <div class="sso">Sign in with Microsoft</div>
+                  <div class="sso">Sign in with Google</div>
+                  <div class="cross"><span>Not for your school</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Forgot -->
+  <section class="section" id="forgot">
+    <div class="section-head">
+      <div class="num">?</div>
+      <div>
+        <h2>No invite, or forgot your password</h2>
+        <p class="who">For teachers. You can set a new password yourself.</p>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <ol class="steps">
+          <li>Go to <strong>app.impactassessment.org.au</strong>, type your school email and click <strong>Next</strong>.</li>
+          <li>On the password screen, click <strong>I have forgotten my credentials</strong>.</li>
+          <li>Open the password reset email in your school inbox.</li>
+          <li>Follow the link and set your new password. Then log in as in step 3.</li>
+        </ol>
+      </div>
+      <div class="screen" role="img" aria-label="Password screen with the I have forgotten my credentials link highlighted">
+        <div class="chrome"><i></i><i></i><i></i><span class="url">app.impactassessment.org.au/login</span></div>
+        <div class="login-body">
+          <div class="card">
+            <div class="field">
+              <label>Email</label>
+              <div class="input filled">firstname.lastname@education.vic.gov.au</div>
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <div class="input">Enter your password</div>
+            </div>
+            <div class="row">
+              <span class="check"><i></i>Remember me</span>
+              <span class="forgot ring" style="padding:.1rem .25rem">I have forgotten my credentials<span class="pin" style="right:-.6rem;top:-1.3rem">2</span></span>
+            </div>
+            <span class="btn-main">LOGIN</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chooser -->
+  <section class="section">
+    <div class="section-head">
+      <div class="num">→</div>
+      <div><h2>Which one do I need?</h2></div>
+    </div>
+    <div class="chooser">
+      <div class="choice">
+        <h3>I got an invite email</h3>
+        <p>Click the link, set your password, then log in with email and password.</p>
+        <a href="#password">Set your password</a>
+      </div>
+      <div class="choice">
+        <h3>I have no email, or I forgot my password</h3>
+        <p>Use “I have forgotten my credentials” on the login page to set a new one.</p>
+        <a href="#forgot">Reset your password</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Checklist -->
+  <section class="section">
+    <div class="section-head">
+      <div class="num">✓</div>
+      <div><h2>Still can’t get in? Check these</h2></div>
+    </div>
+    <ul class="checklist">
+      <li><strong>Use your school email</strong>Use the exact school email your school has on record for you, not a personal email.</li>
+      <li><strong>Check junk and spam</strong>Invite and reset emails sometimes land there.</li>
+      <li><strong>Use email and password</strong>Not the Microsoft or Google buttons.</li>
+      <li><strong>Ask your school admin</strong>They can check you’re in the School users list, that your account is active, and send a new invite.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  Still stuck after these checks? Your school’s Impact Assessment admin can contact support@impactassessment.org.au.
+</footer>
+
+<script>
+(function () {
+  var tabs = document.querySelectorAll('.tab');
+  function select(tab) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { select(t); });
+    t.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        select(next); next.focus();
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
